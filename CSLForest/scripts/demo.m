@@ -29,7 +29,7 @@ frontend = 'sift'; % Pick a Front End to use ('rawimages','sift','concentricsubt
 VOCAB_SIZE = 40; %set to 0 to disable restricted vocabulary (ONLY available with some frontends; see BuildVocab_*.m)
 T = 0; %number of LDA topics - set to 0 to disable LDA topics - was 50
 useSavedData = 0; %only set to 1 if you've already run with these params before (past call to PrepareData()) AND not using concentriccircles
-N_VOCAB_PER_CAT = 4;     %30; % Number of images used for vocab - was 4 changing for looting project    - Richard - changed to 39 bcos caltech 4 has 39 okapi
+N_VOCAB_PER_CAT = 30; % Number of images used for vocab - Richard - changed to 39 bcos caltech 4 has 39 okapi
 %% ******************************************
 
 % command line overrides
@@ -77,10 +77,10 @@ vl_setup; %prepare vl_sift for use
 
 fprintf(strcat('Running model on %s dataset using the %s frontend.\n'), DATASET_NAME, frontend);
 
-[ImgLinks, Labels] = LoadImages(N_CATS, filesPerCat, rstream, []);
+[ImgLinks,Labels] = LoadImages(N_CATS, filesPerCat, rstream, []);
 if ~useSavedData
     %This has to be run if you want to extract features and represent all images in the dataset as quantized integral images. 
-    [VOCAB_SIZE, vocab] = DatasetPreprocessor(VOCAB_SIZE, N_CATS, ImgLinks, frontend, [], rstream); 
+    [VOCAB_SIZE,vocab] = DatasetPreprocessor(VOCAB_SIZE, N_CATS, ImgLinks, frontend, [], rstream); 
     if T > 0
         fprintf('Learning LDA Topics\n');   
         LearnLDATopics(VOCAB_SIZE, N_CATS, T, frontend); %saves pwz

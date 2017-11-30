@@ -19,13 +19,13 @@ function [] = CSLROC (errBars, TestLabels, svm_ROC, svm_TPRate, svm_FPRate, csl_
     xlim([0 1]);
     ylim([0 1]);
     hold on;
-    scatter(squeeze(svm_FPRate(:, 1)/100), squeeze(svm_TPRate(:, 1)/100), 80, 'r', 'o', 'LineWidth', 1.0);
+    scatter(squeeze(svm_FPRate(:,1)/100), squeeze(svm_TPRate(:,1)/100), 80, 'r', 'o', 'LineWidth', 1.0);
     myLegend{1,1} = 'Branching Factor = 2';
     myLegend{1,2} = 'x, green';
-    scatter(squeeze(csl_FPRate(:, 2, 1)/100), squeeze(csl_TPRate(:, 2, 1)/100), 80, [0,0.8,0], 'x', 'LineWidth', 1.0);
+    scatter(squeeze(csl_FPRate(:,2,1)/100), squeeze(csl_TPRate(:,2,1)/100), 80, [0,0.8,0], 'x', 'LineWidth', 1.0);
     myLegend{2,1} = 'Branching Factor = 6';
     myLegend{2,2} = '*, blue';
-    scatter(squeeze(csl_FPRate(:, 6, 1)/100), squeeze(csl_TPRate(:, 6, 1)/100), 80, 'b', '*', 'LineWidth', 1.0);
+    scatter(squeeze(csl_FPRate(:,6,1)/100), squeeze(csl_TPRate(:,6,1)/100), 80, 'b', '*', 'LineWidth', 1.0);
 
     save(strrep(strcat('myLegend_', xmlFileName), '.xml', '.mat'), 'myLegend');
     xlabel('FP Rate', 'FontSize', 16);

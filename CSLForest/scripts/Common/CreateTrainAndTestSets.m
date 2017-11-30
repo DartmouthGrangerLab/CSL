@@ -6,9 +6,9 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [TrainDMapIndices, TrainLabels, TestDMapIndices, TestLabels] = CreateTrainAndTestSets(Labels, N_CATS, fractionTrain)
-    if ~exist('fractionTrain','var') || isempty(fractionTrain)
-        fractionTrain = 0.5;
+function [TrainDMapIndices, TrainLabels, TestDMapIndices, TestLabels] = CreateTrainAndTestSets(Labels, N_CATS, fractionTest)
+    if ~exist('fractionTest', 'var') || isempty(fractionTest)
+        fractionTest = 0.5;
     end
 
     TrainDMapIndices = [];
@@ -17,7 +17,7 @@ function [TrainDMapIndices, TrainLabels, TestDMapIndices, TestLabels] = CreateTr
     TestLabels = [];
     for k = 1:N_CATS
         CatIndices = find(Labels == k);
-        TN = ceil(numel(CatIndices) * fractionTrain); %num test
+        TN = ceil(numel(CatIndices) * fractionTest); %num test
         M = numel(CatIndices) - TN; %num train
         [RandIndices] = myrandperm(numel(CatIndices));
         CatIndices = CatIndices(RandIndices);

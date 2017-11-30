@@ -11,24 +11,24 @@ function [] = QuickRun (L1BagsPlusFile)
     global OutputPath; % at this point, this contains the full path from the top of the root folder through the folder for the run of demo.m
     %% ******************************************
     %user settings
-    startK = 40; %starting size for K (branching factor)
-    stepK = 4; %step size for K (branching factor)
-    endK = 40;%40 %end size for K (branching factor) (multiple of stepK)
-    numRuns = 2;%25 %number of times to independently run CSL forest
+    startK = 8; %starting size for K (branching factor)
+    stepK = 10; %step size for K (branching factor)
+    endK = 8;%40 %end size for K (branching factor) (multiple of stepK)
+    numRuns = 10; %number of times to independently run CSL forest
     minSize = 7; %nodes with less than this number of data points in them will never spawn children (default = 5);
     maxNodeLevel = 99999; %hard depth limit for trees (default = 99999)
     numTrees = 100; %number of trees within a single run/forest (default = 100)
-    BF = 1.0; %bagging fraction (default = .6)
-    FF = 0.2; %MUST be 1.0 for jointstills %0.2 for looting %feature fraction. percent of features randomly selected for classification at a given nodemore features = slower. sqrt(numfeatures)
+    BF = 0.6; %bagging fraction (default = .6)
+    FF = 0.4; %feature fraction. percent of features randomly selected for classification at a given node. more features = slower.
     matlabClusterModule = 'kmeans'; %could be 'kmeans', 'gmm', or 'jointstills' once implemented
-    fractionTest = 0.1; %fraction to split off for training (1-fractionTest = # train) (default = .5)
+    fractionTest = 0.1; %fraction to split off for testing (1-fractionTest = # train) (default = .5)
     runMatlab = 1;
     runJava = 0;
     useImages = 1; %only set to 1 if running demo.m on image data
     %% ******************************************
-    SVMFailed = 0;
     
     if strcmp(matlabClusterModule, 'jointstills')
+        assert(FF == 0.2, 'FF must be 0.2 for jointstills');
         if minSize < 2 * endK
             minSize = 2 * endK;
             fprintf('minSize too small - switching to %d\n', minSize);
@@ -81,13 +81,12 @@ function [] = QuickRun (L1BagsPlusFile)
     Labels = Labels';
     %% split train and test
     for run = 1:numRuns
-        [TrainHIndices{run}(:,:), TrainLabels{run}(:,:), TestHIndices{run}(:,:), TestLabels{run}(:,:)] = CreateTrainAndTestSets(Labels, N_CATS, fractionTest);
+        [TrainHIndices{run},TrainLabels{run},TestHIndices{run},TestLabels{run}] = CreateTrainAndTestSets(Labels, N_CATS, fractionTest);
         if useImages
             TrainRefImgs{run} = ReferenceImgs(TrainHIndices{run}');
             TestRefImgs{run} = ReferenceImgs(TestHIndices{run}');
         end
         classSizes = hist(TrainLabels{run}, unique(TrainLabels{run}));
-        classSizes2 = hist(TestLabels{run}, unique(TestLabels{run}));
         
         %remove excess training points so that we have an equal number for each class
         for classNum = 1:numel(unique(TrainLabels{run}))
@@ -105,10 +104,9 @@ function [] = QuickRun (L1BagsPlusFile)
     %% ******************************************
     java_Acc = zeros(numRuns, endK);
     mat_Acc = zeros(numRuns, endK);
-    svm_Test_Acc = zeros(numRuns, 6);
+    svm_Test_Acc = zeros(numRuns, 1);
     FP = [];
     FN = [];
-    classAcc = [];
     for run = 1:numRuns
         fprintf('BEGIN: Run %d\n', run); 
         TrainH = H(TrainHIndices{run}, :);
@@ -119,44 +117,38 @@ function [] = QuickRun (L1BagsPlusFile)
         end
         
         %% SVM
-        %Training
-        j = 1;
-        svm_Test_Pred_Labels = cell(numRuns, 6);
-        
-        for kernel = {'none','linear','quadratic','polynomial','rbf','mlp'}
-            try
-                svmOptions.MaxIter = 150000; %default = 15000 (increase to prevent crashes)
-                svm_Test_Pred_Labels{run, j} = cosmo_classify_matlabsvm(TrainH, TrainLabels{run}(:), TestH, svmOptions);
+        svm_Test_Pred_Labels = cell(numRuns, 1);
+        SVMFailed = 0;
+        try
+            svmOptions.MaxIter = 150000; %default = 15000 (increase to prevent crashes)
+            svm_Test_Pred_Labels{run} = cosmo_classify_matlabsvm(TrainH, TrainLabels{run}(:), TestH, svmOptions);
 
-                svm_Test_Acc(run, j) = sum(TestLabels{run} == svm_Test_Pred_Labels{run, j}) / size(TestLabels{run},1);
-                
-                fprintf('SVM %s: Accuracy:%f.\n', kernel{1}, svm_Test_Acc(run, j));
-                
-                CFMat = zeros(N_CATS, N_CATS);
-                for Cnt = 1:numel(svm_Test_Pred_Labels{run, j})
-                    if svm_Test_Pred_Labels{run, j}(Cnt) ~= -1
-                        CFMat(TestLabels{run}(Cnt), svm_Test_Pred_Labels{run, j}(Cnt)) = CFMat(TestLabels{run}(Cnt), svm_Test_Pred_Labels{run, j}(Cnt)) + 1;                    
-                    end
-                end
-                for i = 1:N_CATS
-                    %format is CFMat(ground truth, predicted)
-                    svm_TP(run, j, i) = CFMat(i,i);
-                    svm_FP(run, j, i) = sum(CFMat(:,i))-CFMat(i,i);
-                    svm_FN(run, j, i) = sum(CFMat(i,:))-CFMat(i,i);
-                    svm_TPRate(run, j, i) = 100 * svm_TP(run, j, i) / (svm_TP(run, j, i) + svm_FN(run, j, i));
-                    svm_FPRate(run, j, i) = 100 * svm_FP(run, j, i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
-                    svm_FNRate(run, j, i) = 100 * svm_FN(run, j, i) / sum(CFMat(i,:)); %FN / (TP + FN)
-                    svm_Sensitivity(run, j, i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
-                    fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, svm_Sensitivity(run, j, i), svm_FPRate(run, j, i), svm_FP(run, j, i), svm_FNRate(run, j, i), svm_FN(run, j, i));
-                end
+            svm_Test_Acc(run) = sum(TestLabels{run} == svm_Test_Pred_Labels{run}) / size(TestLabels{run},1);
 
-                fprintf('---------------\n');
-            catch
-                warning('SVM failed to converge');
-                SVMFailed = 1;
+            fprintf('SVM Accuracy:%f.\n', svm_Test_Acc(run));
+
+            CFMat = zeros(N_CATS, N_CATS);
+            for Cnt = 1:numel(svm_Test_Pred_Labels{run})
+                if svm_Test_Pred_Labels{run}(Cnt) ~= -1
+                    CFMat(TestLabels{run}(Cnt), svm_Test_Pred_Labels{run}(Cnt)) = CFMat(TestLabels{run}(Cnt), svm_Test_Pred_Labels{run}(Cnt)) + 1;                    
+                end
             end
-            
-            j = j + 1;
+            for i = 1:N_CATS
+                %format is CFMat(ground truth, predicted)
+                svm_TP(run,i) = CFMat(i,i);
+                svm_FP(run,i) = sum(CFMat(:,i))-CFMat(i,i);
+                svm_FN(run,i) = sum(CFMat(i,:))-CFMat(i,i);
+                svm_TPRate(run,i) = 100 * svm_TP(run,i) / (svm_TP(run,i) + svm_FN(run,i));
+                svm_FPRate(run,i) = 100 * svm_FP(run,i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
+                svm_FNRate(run,i) = 100 * svm_FN(run,i) / sum(CFMat(i,:)); %FN / (TP + FN)
+                svm_Sensitivity(run,i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
+                fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, svm_Sensitivity(run,i), svm_FPRate(run,i), svm_FP(run,i), svm_FNRate(run,i), svm_FN(run,i));
+            end
+
+            fprintf('---------------\n');
+        catch
+            warning('SVM failed to converge');
+            SVMFailed = 1;
         end
 
         %% CSL
@@ -169,44 +161,44 @@ function [] = QuickRun (L1BagsPlusFile)
             %% Matlab
             %TODO: maxNodeLevel NOT implemented
             %TODO: FF not implemented for jointstills
-            mat_PredObjLabels{run, maxk} = {};
+            mat_PredObjLabels{run,maxk} = {};
             if runMatlab
-                [mat_PredObjLabels{run, maxk}, mat_Acc(run, maxk), forest] = cslforest_supervised_func(TrainH, TrainLabels{run}, TrainDMap, numTrees, maxk, BF, FF, minSize, maxNodeLevel, TestH, TestLabels{run}, TestDMap, matlabClusterModule);
-                mat_PredObjLabels{run, maxk} = mat_PredObjLabels{run, maxk}';
-                CFMat = confusionmat(TestLabels{run}, mat_PredObjLabels{run, maxk});
+                [mat_PredObjLabels{run,maxk},mat_Acc(run,maxk),forest] = cslforest_supervised_func(TrainH, TrainLabels{run}, TrainDMap, numTrees, maxk, BF, FF, minSize, maxNodeLevel, TestH, TestLabels{run}, TestDMap, matlabClusterModule);
+                mat_PredObjLabels{run,maxk} = mat_PredObjLabels{run,maxk}';
+                CFMat = confusionmat(TestLabels{run}, mat_PredObjLabels{run,maxk});
                 for i = 1:N_CATS
                     %format is CFMat(ground truth, predicted)
-                    TP(run, maxk, i) = CFMat(i,i);
-                    FP(run, maxk, i) = sum(CFMat(:,i))-CFMat(i,i);
-                    FN(run, maxk, i) = sum(CFMat(i,:))-CFMat(i,i);
-                    TPRate(run, maxk, i) = 100 * TP(run, maxk, i) / (TP(run, maxk, i) + FN(run, maxk, i));
-                    FPRate(run, maxk, i) = 100 * FP(run, maxk, i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
-                    FNRate(run, maxk, i) = 100 * FN(run, maxk, i) / sum(CFMat(i,:)); %FN / (TP + FN)
-                    sensitivity(run, maxk, i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
-                    fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, sensitivity(run, maxk, i), FPRate(run, maxk, i), FP(run, maxk, i), FNRate(run, maxk, i), FN(run, maxk, i));
+                    TP(run,maxk,i) = CFMat(i,i);
+                    FP(run,maxk,i) = sum(CFMat(:,i))-CFMat(i,i);
+                    FN(run,maxk,i) = sum(CFMat(i,:))-CFMat(i,i);
+                    TPRate(run,maxk,i) = 100 * TP(run,maxk,i) / (TP(run,maxk,i) + FN(run,maxk,i));
+                    FPRate(run,maxk,i) = 100 * FP(run,maxk,i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
+                    FNRate(run,maxk,i) = 100 * FN(run,maxk,i) / sum(CFMat(i,:)); %FN / (TP + FN)
+                    sensitivity(run,maxk,i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
+                    fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, sensitivity(run,maxk,i), FPRate(run,maxk,i), FP(run,maxk,i), FNRate(run,maxk,i), FN(run,maxk,i));
                 end
             end
             
             %% Java
-            java_PredObjLabels{run, maxk} = [];
+            java_PredObjLabels{run,maxk} = [];
             if runJava
                 tic;
-                java_PredObjLabels{run, maxk} = bt.TrainAndTest(TrainH, TrainLabels{run}, numTrees, maxk, BF, FF, minSize, maxNodeLevel, strcat(cslOutputFolder, '/', xmlFileName), TestH);
+                java_PredObjLabels{run,maxk} = bt.TrainAndTest(TrainH, TrainLabels{run}, numTrees, maxk, BF, FF, minSize, maxNodeLevel, strcat(cslOutputFolder, '/', xmlFileName), TestH);
                 tocTime = toc;
                 fprintf('Java CSL RandomForest: TotalTime = %f\n', tocTime);
-                CFMat = confusionmat(TestLabels{run}, java_PredObjLabels{run, maxk});
-                java_Acc(run, maxk) = 100 * sum(diag(CFMat))/sum(sum(CFMat));
-                fprintf('Java CSL RandomForest: max_k = %d, Accuracy = %f%%.\n', maxk, java_Acc(run, maxk));
+                CFMat = confusionmat(TestLabels{run}, java_PredObjLabels{run,maxk});
+                java_Acc(run,maxk) = 100 * sum(diag(CFMat))/sum(sum(CFMat));
+                fprintf('Java CSL RandomForest: max_k = %d, Accuracy = %f%%.\n', maxk, java_Acc(run,maxk));
                 for i = 1:N_CATS
                     %format is CFMat(ground truth, predicted)
-                    TP(run, maxk, i) = CFMat(i,i);
-                    FP(run, maxk, i) = sum(CFMat(:,i))-CFMat(i,i);
-                    FN(run, maxk, i) = sum(CFMat(i,:))-CFMat(i,i);
-                    TPRate(run, maxk, i) = 100 * TP(run, maxk, i) / (TP(run, maxk, i) + FN(run, maxk, i));
-                    FPRate(run, maxk, i) = 100 * FP(run, maxk, i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
-                    FNRate(run, maxk, i) = 100 * FN(run, maxk, i) / sum(CFMat(i,:)); %FN / (TP + FN)
-                    sensitivity(run, maxk, i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
-                    fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, sensitivity(run, maxk, i), FPRate(run, maxk, i), FP(run, maxk, i), FNRate(run, maxk, i), FN(run, maxk, i));
+                    TP(run,maxk,i) = CFMat(i,i);
+                    FP(run,maxk,i) = sum(CFMat(:,i))-CFMat(i,i);
+                    FN(run,maxk,i) = sum(CFMat(i,:))-CFMat(i,i);
+                    TPRate(run,maxk,i) = 100 * TP(run,maxk,i) / (TP(run,maxk,i) + FN(run,maxk,i));
+                    FPRate(run,maxk,i) = 100 * FP(run,maxk,i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
+                    FNRate(run,maxk,i) = 100 * FN(run,maxk,i) / sum(CFMat(i,:)); %FN / (TP + FN)
+                    sensitivity(run,maxk,i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
+                    fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, sensitivity(run,maxk,i), FPRate(run,maxk,i), FP(run,maxk,i), FNRate(run,maxk,i), FN(run,maxk,i));
                 end
             end
             
@@ -221,35 +213,23 @@ function [] = QuickRun (L1BagsPlusFile)
             end
             MatAccuracy = mat_Acc(run,maxk);
             JavaAccuracy = java_Acc(run,maxk);
-            SVMAccuracy = svm_Test_Acc(run,:);
+            SVMAccuracy = svm_Test_Acc(run);
             MatPredL = mat_PredObjLabels{run,maxk};
             JavaPredL = java_PredObjLabels{run,maxk};
-            SVMPredL = svm_Test_Pred_Labels{run,:};
+            SVMPredL = svm_Test_Pred_Labels{run};
             if useImages
-                save( strcat(cslOutputFolder, '/', strcat(k_run_unique_str, '.mat')), '-v7.3', ...
+                save(strcat(cslOutputFolder, '/', strcat(k_run_unique_str, '.mat')), '-v7.3', ...
                     'run', ...
                     'maxk', ...
-                    'MatAccuracy', ...
-                    'JavaAccuracy', ...
-                    'SVMAccuracy', ...
-                    'MatPredL', ...
-                    'JavaPredL', ...
-                    'SVMPredL', ...
-                    'maxNodeLevel', ...
-                    'description', ...
-                    'TrainH', ...
-                    'TestH', ...
-                    'DMap', ...
-                    'TrainDMap', ...
-                    'TrainDMapI', ...
-                    'TestDMap', ...
-                    'TestDMapI', ...
-                    'TrainL', ...
-                    'TestL', ...
-                    'TrainRefI', ...
-                    'TestRefI', ...
-                    'frontend', ...
                     'VOCAB_SIZE', ...
+                    'MatAccuracy', 'JavaAccuracy', 'SVMAccuracy', ...
+                    'MatPredL', 'JavaPredL', 'SVMPredL', ...
+                    'maxNodeLevel', ...
+                    'TrainH', 'TrainDMap', 'TrainDMapI', 'TrainL', 'TrainRefI', ...
+                    'TestH', 'TestDMap', 'TestDMapI', 'TestL', 'TestRefI', ...
+                    'description', ...
+                    'DMap', ...
+                    'frontend', ...
                     'N_VOCAB_PER_CAT', ...
                     'filesPerCat', ...
                     'useSavedData', ...
@@ -258,68 +238,40 @@ function [] = QuickRun (L1BagsPlusFile)
                     'ImgLinks', ...
                     'SIFTBorder');
                 clear MatAccuracy MatPredL SVMPredL TrainDMapI TestDMapI TrainL TestL TrainRefI TestRefI;
-                if runMatlab
-                    MislabledTestData.Labels = TestLabels{run};
-                    MislabledTestData.PredLabels = mat_PredObjLabels{run, maxk};
-                    MislabledTestData.TestRefImgs = TestRefImgs{run};
-                    MislabledTestData.kRunUniqueString = strcat(k_run_unique_str, '_matlab');
-                    MislabledTestData.run = run;
-                    MislabledTestData.maxk = maxk;
-                    save(strcat(cslOutputFolder, '/', strcat(MislabledTestData.kRunUniqueString, '_mislabeledtestdata.mat')), 'MislabledTestData');
-                end
             elseif ~SVMFailed
                 save(strcat(cslOutputFolder, '/', strcat(k_run_unique_str, '.mat')), '-v7.3', ...
                     'run', ...
                     'maxk', ...
-                    'MatAccuracy', ...
-                    'JavaAccuracy', ...
-                    'SVMAccuracy', ...
-                    'MatPredL', ...
-                    'JavaPredL', ...
-                    'SVMPredL', ...
+                    'VOCAB_SIZE', ...
+                    'MatAccuracy', 'JavaAccuracy', 'SVMAccuracy', ...
+                    'MatPredL', 'JavaPredL', 'SVMPredL', ...
                     'maxNodeLevel', ...
-                    'TrainH', ...
-                    'TestH', ...
-                    'TrainDMapI', ...
-                    'TestDMapI', ...
-                    'TrainL', ...
-                    'TestL', ...
-                    'VOCAB_SIZE');
+                    'TrainH', 'TrainDMapI', 'TrainL', ...
+                    'TestH', 'TestDMapI', 'TestL');
                 clear MatAccuracy MatPredL SVMPredL TrainDMapI TestDMapI TrainL TestL TrainRefI TestRefI;
-                if runMatlab
-                    MislabledTestData.Labels = TestLabels{run};
-                    MislabledTestData.PredLabels = mat_PredObjLabels{run, maxk};
-                    MislabledTestData.kRunUniqueString = strcat(k_run_unique_str, '_matlab');
-                    MislabledTestData.run = run;
-                    MislabledTestData.maxk = maxk;
-                    save(strcat(cslOutputFolder, '/', strcat(MislabledTestData.kRunUniqueString, '_mislabeledtestdata.mat')), 'MislabledTestData');
-                end
             else
                 save(strcat(cslOutputFolder, '/', strcat(k_run_unique_str, '.mat')), '-v7.3', ...
                     'run', ...
                     'maxk', ...
-                    'MatAccuracy', ...
-                    'JavaAccuracy', ...
-                    'MatPredL', ...
-                    'JavaPredL', ...
-                    'SVMPredL', ...
+                    'VOCAB_SIZE', ...
+                    'MatAccuracy', 'JavaAccuracy', ...
+                    'MatPredL', 'JavaPredL', 'SVMPredL', ...
                     'maxNodeLevel', ...
-                    'TrainH', ...
-                    'TestH', ...
-                    'TrainDMapI', ...
-                    'TestDMapI', ...
-                    'TrainL', ...
-                    'TestL', ...
-                    'VOCAB_SIZE');
+                    'TrainH', 'TrainDMapI', 'TrainL', ...
+                    'TestH', 'TestDMapI', 'TestL');
                 clear MatAccuracy MatPredL SVMPredL TrainDMapI TestDMapI TrainL TestL TrainRefI TestRefI;
-                if runMatlab
-                    MislabledTestData.Labels = TestLabels{run};
-                    MislabledTestData.PredLabels = mat_PredObjLabels{run, maxk};
-                    MislabledTestData.kRunUniqueString = strcat(k_run_unique_str, '_matlab');
-                    MislabledTestData.run = run;
-                    MislabledTestData.maxk = maxk;
-                    save(strcat(cslOutputFolder, '/', strcat(MislabledTestData.kRunUniqueString, '_mislabeledtestdata.mat')), 'MislabledTestData');
+            end
+            
+            if runMatlab
+                MislabledTestData.Labels = TestLabels{run};
+                MislabledTestData.PredLabels = mat_PredObjLabels{run,maxk};
+                MislabledTestData.kRunUniqueString = strcat(k_run_unique_str, '_matlab');
+                MislabledTestData.run = run;
+                MislabledTestData.maxk = maxk;
+                if useImages
+                    MislabledTestData.TestRefImgs = TestRefImgs{run};
                 end
+                save(strcat(cslOutputFolder, '/', strcat(MislabledTestData.kRunUniqueString, '_mislabeledtestdata.mat')), 'MislabledTestData');
             end
             
             if ~exist('forest','var')
@@ -347,19 +299,25 @@ function [] = QuickRun (L1BagsPlusFile)
     end
     
     if ~SVMFailed
-        fprintf('svm accuracies:\n');
-        asdf = mean(svm_Test_Acc, 1);
-        disp(table(asdf(1),asdf(2),asdf(3),asdf(4),asdf(5),asdf(6), 'VariableNames', {'none','linear','quadratic','polynomial','rbf','mlp'})); 
+        fprintf('svm accuracy:\n');
+        disp(mean(svm_Test_Acc));
     else 
         fprintf('SVM failed\n');
     end
     
-    fprintf('CSL Calculations:\n'); 
     mean_best_max_k = max(mean(acc, 1));
-    fprintf('mean of best max_k across runs: %f\n', mean_best_max_k);
-    
     stderr_mean_best_max_k = StdErr(max(acc,[],2));
-    fprintf('std err of best max_k across runs: %f\n', stderr_mean_best_max_k);
+    fprintf('best max_k across runs: %f +/- %f\n', mean_best_max_k, stderr_mean_best_max_k);
+    fprintf('means across runs for each branching factor:\n');
+    maxkmeans = mean(acc)';
+    maxkmeans = maxkmeans(maxkmeans~=0);
+    disp(maxkmeans);
+    stderrmaxkmeans = StdErr(acc)';
+    stderrmaxkmeans = stderrmaxkmeans(stderrmaxkmeans~=0);
+    fprintf('std err of means across runs for each branching factor:\n');
+    disp(stderrmaxkmeans);
+    
+    fprintf('CSL Calculations:\n'); 
     for maxk = startK:stepK:endK
         fprintf('Branching factor of %d:\n', maxk);
         for i = 1:N_CATS
@@ -369,19 +327,11 @@ function [] = QuickRun (L1BagsPlusFile)
             fprintf('Class %d (stderr):      Sensitivity = %f%%, FP rate = %f%%, FN rate = %f%%\n', i, StdErr(sensitivity(:, maxk, i)), StdErr(FPRate(:, maxk, i)), StdErr(FNRate(:, maxk, i)));
         end
     end
-    fprintf('means across runs for each max_branching_factor:\n');
-    maxkmeans = mean(acc)';
-    maxkmeans = maxkmeans(maxkmeans~=0);
-    disp(maxkmeans);
-    stderrmaxkmeans = StdErr(acc)';
-    stderrmaxkmeans = stderrmaxkmeans(stderrmaxkmeans~=0);
-    fprintf('std err of means across runs for each max_branching_factor:\n');
-    disp(stderrmaxkmeans);
     clear acc;
     
     %% plot ROC
     if N_CATS == 2
-        CSLROC(false, TestLabels, svm_ROC, svm_TPRate, svm_FPRate, TPRate, FPRate, xmlFileName);
+        CSLROC(false, TestLabels, svm_ROC, svm_TPRate, svm_FPRate, TPRate, FPRate, fullfile(cslOutputFolder, xmlFileName));
     end
     
     %% plot bar graph of mean accuracies for each branching factor
@@ -391,7 +341,7 @@ function [] = QuickRun (L1BagsPlusFile)
 %     bar(y);
     
     %% save workspace (except bt = cslforest.BatchTrain@3140828f because it's not serializable)
-    save(strcat(cslOutputFolder, '/csl_workspace.mat'), '-v7.3', '-regexp', '^(?!(bt)$).'); %save everything
+    save(fullfile(cslOutputFolder, 'csl_workspace.mat'), '-v7.3', '-regexp', '^(?!(bt)$).'); %save everything
     diary off;
 end
 
