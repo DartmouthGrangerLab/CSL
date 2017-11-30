@@ -16,9 +16,9 @@ This code was tested on matlab R2014a, and may require minor tweaking for compat
 Depending on your operating system, you may need to compile the mex code in cosegment_BBox/ and LDA/.
 
 ## Running the Code
-1. Start matlab, and move matlab's working directory to the parent folder of CSLForest_v1
-2. Add the entire CSLForest_v1 folder to your matlab path.
-3. Execute CSLForest_v1/scripts/demo.m
+1. Start matlab, and move matlab's working directory to the parent folder of CSLForest
+2. Add the entire CSLForest folder to your matlab path.
+3. Execute CSLForest/scripts/demo.m
 
 ## Available Datasets
 This repository comes ready-to-go with a 4-category subset of the Caltech101 image dataset\[3\]. It has been tested on several datasets:
