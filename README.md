@@ -36,6 +36,7 @@ You can use this code on your own datasets. To add a new dataset:
 2. Create a new configuration file in CSLForest_v1/scripts/DatasetConstants/ .
 3. Modify a demo script in CSLForest_v1/scripts/ as appropriate.
 
+## References
 \[1\]: https://www.frontiersin.org/articles/10.3389/fncom.2011.00050/full
 
 \[2\]: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
