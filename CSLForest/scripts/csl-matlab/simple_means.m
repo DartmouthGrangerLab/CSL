@@ -6,7 +6,7 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [centroids] = simple_means (data, dataByLabels, maxk)
+function centroids = simple_means (data, dataByLabels, maxk)
     % return maxk centroids with an even number, if possible, in each class
 
     centroids = [];
@@ -19,9 +19,9 @@ function [centroids] = simple_means (data, dataByLabels, maxk)
         meansPerClass(:) = floor(maxk/c);
     
         if sum(meansPerClass) < maxk
-            %get correct number of centroids overall
+            % get correct number of centroids overall
             numNeeded = maxk - sum(meansPerClass);
-            bonusClusters = randsample(1:c,numNeeded,0); %WITHOUT replacement
+            bonusClusters = randsample(1:c,numNeeded,0); % WITHOUT replacement
             for i = 1:numel(bonusClusters)
                 meansPerClass(bonusClusters(i)) = meansPerClass(bonusClusters(i)) + 1;
             end
@@ -47,4 +47,3 @@ function [centroids] = simple_means (data, dataByLabels, maxk)
     end
     
 end
-

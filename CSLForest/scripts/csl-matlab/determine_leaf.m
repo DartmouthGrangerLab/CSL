@@ -6,11 +6,10 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [flag] = determine_leaf (obj, ID)
+function flag = determine_leaf(obj, ID)
     if ID < 1 || ID > numel(obj.Parent)
         error('MATLAB:tree:isleaf', 'No node with ID %d.', ID)
     end
     parent = obj.Parent;
     flag = ~any(parent == ID);
 end
-

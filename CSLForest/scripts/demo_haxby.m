@@ -9,11 +9,14 @@
 
 % DESCRIPTION: Main entry point. Execute this script directly.
 %	assumes you'll execute this script from one level above the CSLForest directory
-function [] = Haxby_Demo ()
+function [] = demo_haxby()
     DefConstants_Haxby;
-    global DATASET_NAME;
-    global ResourcePath;
+    global DATASET_NAME
+    global ResourcePath
     
+    if exist(fullfile(ResourcePath, 'H.mat'), 'file') == 0 || exist(fullfile(ResourcePath, 'Labels.mat'), 'file') == 0
+        error('you will need to download / request this dataset separately, then place H.mat and Labels.mat in your resources folder');
+    end
     load(fullfile(ResourcePath, 'H.mat'));
     load(fullfile(ResourcePath, 'Labels.mat'));
     L1Bags = H;

@@ -7,7 +7,7 @@
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
 % DESCRIPTION: Routine to generate histogram map for all images in a given directory
-function [QuantImg,Filter] = GetQuantizedImg_Hog (ImgFile, vocab)
+function [QuantImg,Filter] = GetQuantizedImg_Hog(ImgFile, vocab)
     ImgInfo = imfinfo(char(ImgFile));
     QuantImg = zeros(ImgInfo.Height, ImgInfo.Width, 1);
     [ImgFeatures, ImgLocs, Filter] = GetHOGFeaturesFromFile(char(ImgFile));

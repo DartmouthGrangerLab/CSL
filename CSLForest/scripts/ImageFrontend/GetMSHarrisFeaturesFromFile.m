@@ -8,13 +8,13 @@
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
 % Author: Brett Tofel, brain engineering laboratory, Dartmouth 
 % DESCRIPTION: Extracts features from image
-function [Feats,Locs] = GetMSHarrisFeaturesFromFile (Img)
+function [Feats,Locs] = GetMSHarrisFeaturesFromFile(Img)
     I = imread(char(Img));
     
     % Convert the to required format
     r = size(I, 3);
-    if (r == 3)
-       I = single(rgb2gray(I)) ;
+    if r == 3
+       I = single(rgb2gray(I));
     else
        I = single(I);
     end
@@ -26,12 +26,10 @@ function [Feats,Locs] = GetMSHarrisFeaturesFromFile (Img)
     Locs = [Ys Xs];
     
     imshow(I, [], 'InitialMagnification', 400);
-    hold on;
+    hold on
     vl_plotframe(frames);
-    hold off;
+    hold off
     pause;
     Feats = descrs;
     Feats = double(Feats');
 end
-
-

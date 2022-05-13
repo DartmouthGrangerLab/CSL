@@ -8,18 +8,18 @@
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
 % Author: Brett Tofel, brain engineering laboratory, Dartmouth 
 % DESCRIPTION: Extracts features from image
-function [Feats,Locs] = GetMSERFeaturesFromFile (Img)
+function [Feats,Locs] = GetMSERFeaturesFromFile(Img)
     I = imread(char(Img));
     
     % Convert the to required format
     r = size(I, 3);
-    if (r == 3)
-       I = uint8(rgb2gray(I)) ;
+    if r == 3
+       I = uint8(rgb2gray(I));
     else
        I = uint8(I);
     end
      
-    [~,Feats] = vl_mser(I,'MinDiversity',0.7,'MaxVariation',0.2,'Delta',1) ;
+    [~,Feats] = vl_mser(I,'MinDiversity',0.7,'MaxVariation',0.2,'Delta',1);
 
     Xs = Feats(2,1:end)';
     Ys = Feats(1,1:end)';

@@ -1,4 +1,4 @@
-function [root,node_centroids,node_variances,feature_space] = batchTrain_supervised (data, Labels, DMap, bagged_points, ff, node_centroids, node_variances, feature_space, maxk, minSize, maxNodeLevel, JSSettings, clusterModule)
+function [root,node_centroids,node_variances,feature_space] = batchTrain_supervised(data, Labels, DMap, bagged_points, ff, node_centroids, node_variances, feature_space, maxk, minSize, maxNodeLevel, JSSettings, clusterModule)
     %% Trains a tree for given bagged dataset
     % Input:
     % data : Training dataset
@@ -56,9 +56,3 @@ function [root,node_centroids,node_variances,feature_space] = batchTrain_supervi
        end
     end
 end
-
-
-
-
-
-

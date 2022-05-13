@@ -15,7 +15,7 @@ function [Feats,Locs,Filter] = GetHOGFeaturesFromFile (Img)
     [HOG,Filter] = Dense_hog(Iorig,4,0.0);
 
     %% create Locs artificially. JointStills needs a nx2 matrix of locations,
-    %  HOG just has MxMxR matrix of Feats
+    % HOG just has MxMxR matrix of Feats
     iLen = size(HOG,1);
     jLen = size(HOG,2);
     nLen = size(HOG,3);
@@ -33,5 +33,3 @@ function [Feats,Locs,Filter] = GetHOGFeaturesFromFile (Img)
     end
     save(strcat(Img,'_HOG.mat'),'HOG','Locs', 'Feats');
 end
-
-

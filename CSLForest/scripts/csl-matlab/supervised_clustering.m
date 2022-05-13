@@ -6,7 +6,7 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [clusters,node_centroids,node_variances,root,feature_space,outRectWins] = supervised_clustering (data, root, idx, node_centroids, node_variances, ff_points, feature_space, centroids, points, DMap, JSSettings, clusterModule)
+function [clusters,node_centroids,node_variances,root,feature_space,outRectWins] = supervised_clustering(data, root, idx, node_centroids, node_variances, ff_points, feature_space, centroids, points, DMap, JSSettings, clusterModule)
     %% Kmeans clustering and creation of nodes
     % INPUT:
     % data : histogram of randomly selected features
@@ -22,7 +22,7 @@ function [clusters,node_centroids,node_variances,root,feature_space,outRectWins]
     % node_centroids : cluster centroids corresponding to the clusters
     % root : returns the training tree with new nodes added
 
-    %default data
+    % default data
     outRectWins = [];
 
     if strcmp(clusterModule, 'kmeans')
@@ -45,4 +45,3 @@ function [clusters,node_centroids,node_variances,root,feature_space,outRectWins]
         feature_space = q_fifo(feature_space, 'push', ff_points);
     end
 end
-

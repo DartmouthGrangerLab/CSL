@@ -6,8 +6,8 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [] = CSLROC (errBars, TestLabels, svm_ROC, svm_TPRate, svm_FPRate, csl_TPRate, csl_FPRate, xmlFileName)
-    hold off;
+function [] = CSLROC(errBars, TestLabels, svm_ROC, svm_TPRate, svm_FPRate, csl_TPRate, csl_FPRate, xmlFileName)
+    hold off
     rocFig = figure();
     if ~errBars
         [X,Y,~,~] = perfcurve(TestLabels, svm_ROC, 1, 'XVals', 0:0.02:1);
@@ -18,7 +18,7 @@ function [] = CSLROC (errBars, TestLabels, svm_ROC, svm_TPRate, svm_FPRate, csl_
     end
     xlim([0 1]);
     ylim([0 1]);
-    hold on;
+    hold on
     scatter(squeeze(svm_FPRate(:,1)/100), squeeze(svm_TPRate(:,1)/100), 80, 'r', 'o', 'LineWidth', 1.0);
     myLegend{1,1} = 'Branching Factor = 2';
     myLegend{1,2} = 'x, green';

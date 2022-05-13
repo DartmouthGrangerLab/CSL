@@ -6,7 +6,7 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [vocab,VOCAB_SIZE] = BuildVocab_Concentricsubtraction (VOCAB_SIZE, QuantImg)
+function [vocab,VOCAB_SIZE] = BuildVocab_Concentricsubtraction(VOCAB_SIZE, QuantImg)
     allvals = [];
     for nFile = 1:numel(QuantImg)
         img = QuantImg{nFile};
@@ -21,7 +21,7 @@ function [vocab,VOCAB_SIZE] = BuildVocab_Concentricsubtraction (VOCAB_SIZE, Quan
         fprintf('Vocab size changed from %d to %d.\n', VOCAB_SIZE, numel(vocab));
         VOCAB_SIZE = numel(vocab);
     else
-        load('rstream');
+        load(fullfile('CSLForest', 'resources', 'rstream.mat'), 'rstream');
         opts = statset('Display', 'iter', 'Streams', rstream, 'MaxIter', 20);
         [centers, mincenter, mindist, lower, computed] = anchors(mean(vocab), VOCAB_SIZE, vocab);
         [Idx, vocab] = kmeans(vocab, VOCAB_SIZE, 'start', centers, 'Distance', 'sqEuclidean',...

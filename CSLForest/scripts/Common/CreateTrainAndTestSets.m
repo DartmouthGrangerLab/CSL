@@ -34,4 +34,3 @@ function [TrainDMapIndices, TrainLabels, TestDMapIndices, TestLabels] = CreateTr
         end
     end
 end
-

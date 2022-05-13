@@ -9,12 +9,15 @@
 
 % DESCRIPTION: Main entry point. Execute this script directly.
 %	assumes you'll execute this script from one level above the CSLForest directory
-clearvars;
+clearvars
 
 DefConstants_Higgs;
-global ResourcePath;
+global ResourcePath
 
-filename = fullfile(ResourcePath, '/HIGGS.csv');
+filename = fullfile(ResourcePath, 'HIGGS.csv');
+if exist(filename, 'file') == 0
+    error('you will need to download / request this dataset separately, then place HIGGS.csv in your resources folder');
+end
 Labels = csvread(filename, 0, 0, [0, 0, 500000, 0]);
 Labels = Labels + 1;
 L1Bags = csvread(filename, 0, 1, [0, 1, 500000, 20]);

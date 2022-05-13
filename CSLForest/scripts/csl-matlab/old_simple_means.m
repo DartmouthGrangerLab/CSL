@@ -7,7 +7,7 @@
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
 % RETURNS: a set of cluster centroids
-function [centroids] = old_simple_means (class_means, maxk)
+function centroids = old_simple_means(class_means, maxk)
 	N = size(class_means, 1);    
 	
 	EPS = 0.0000000001;
@@ -55,5 +55,3 @@ function [centroids] = old_simple_means (class_means, maxk)
         end
 	end
 end
-
-

@@ -7,7 +7,7 @@
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
 % Description: File contains routine calls for the core components in the algorithm
-function [predict_label,Acc,forest] = cslforest_supervised_func (TrainH, TrainLabels, TrainDMap, ntrees, maxk, BF, FF, minSize, maxNodeLevel, TestH, TestLabels, TestDMap, clusterModule)
+function [predict_label,Acc,forest] = cslforest_supervised_func(TrainH, TrainLabels, TrainDMap, ntrees, maxk, BF, FF, minSize, maxNodeLevel, TestH, TestLabels, TestDMap, clusterModule)
     % preallocating memory to the cells
     node_centroids{ntrees} = {};
     node_variances{ntrees} = {};
@@ -20,7 +20,7 @@ function [predict_label,Acc,forest] = cslforest_supervised_func (TrainH, TrainLa
     gcp;
     
     tic;
-    %Supervised bagging
+    % Supervised bagging
     for i = 1:ntrees        
         label_set = unique(TrainLabels);
         bagged_points{i} = []; %an array of randomly selected data points from the training dataset (almost equal representation of each category)
@@ -32,7 +32,7 @@ function [predict_label,Acc,forest] = cslforest_supervised_func (TrainH, TrainLa
         end
     end
 
-    %Supervised batchTrain
+    % Supervised batchTrain
     for j = 1:ntrees
         warning off backtrace; %removes stacktraces from warnings
         [root{j},node_centroids{j},node_variances{j},feature_space{j}] = batchTrain_supervised(TrainH, TrainLabels, TrainDMap, bagged_points{j}, FF, node_centroids{j}, node_variances{j}, feature_space{j}, maxk, minSize, maxNodeLevel, JSSettings, clusterModule);
@@ -59,7 +59,7 @@ function [predict_label,Acc,forest] = cslforest_supervised_func (TrainH, TrainLa
 end
 
 
-function [JointStillsSettings] = GatherJointStillsSettings (K)
+function JointStillsSettings = GatherJointStillsSettings(K)
     JointStillsSettings.PYR_LEVELS = 1;
     JointStillsSettings.FG_THRESH = 0.3;
     JointStillsSettings.LL_THRESH = 0.02; %0.02 works for segmented images %0.05 works for caltech 101 4 class and 10 class  as well as msrcv1

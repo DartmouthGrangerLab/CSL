@@ -6,25 +6,25 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [] = QuickRun (L1BagsPlusFile)
-    global ROOT_DIRECTORY;
-    global OutputPath; % at this point, this contains the full path from the top of the root folder through the folder for the run of demo.m
+function [] = QuickRun(L1BagsPlusFile)
+    global ROOT_DIRECTORY
+    global OutputPath % at this point, this contains the full path from the top of the root folder through the folder for the run of demo.m
     %% ******************************************
-    %user settings
-    startK = 8; %starting size for K (branching factor)
-    stepK = 10; %step size for K (branching factor)
-    endK = 8;%40 %end size for K (branching factor) (multiple of stepK)
-    numRuns = 10; %number of times to independently run CSL forest
-    minSize = 7; %nodes with less than this number of data points in them will never spawn children (default = 5);
-    maxNodeLevel = 99999; %hard depth limit for trees (default = 99999)
-    numTrees = 100; %number of trees within a single run/forest (default = 100)
-    BF = 0.6; %bagging fraction (default = .6)
-    FF = 0.4; %feature fraction. percent of features randomly selected for classification at a given node. more features = slower.
-    matlabClusterModule = 'kmeans'; %could be 'kmeans', 'gmm', or 'jointstills' once implemented
-    fractionTest = 0.1; %fraction to split off for testing (1-fractionTest = # train) (default = .5)
+    % user settings
+    startK = 8; % starting size for K (branching factor)
+    stepK = 10; % step size for K (branching factor)
+    endK = 8; %40 % end size for K (branching factor) (multiple of stepK)
+    numRuns = 10; % number of times to independently run CSL forest
+    minSize = 7; % nodes with less than this number of data points in them will never spawn children (default = 5);
+    maxNodeLevel = 99999; % hard depth limit for trees (default = 99999)
+    numTrees = 100; % number of trees within a single run/forest (default = 100)
+    BF = 0.6; % bagging fraction (default = .6)
+    FF = 0.4; % feature fraction. percent of features randomly selected for classification at a given node. more features = slower.
+    matlabClusterModule = 'kmeans'; % could be 'kmeans', 'gmm', or 'jointstills' once implemented
+    fractionTest = 0.1; % fraction to split off for testing (1-fractionTest = # train) (default = .5)
     runMatlab = 1;
     runJava = 0;
-    useImages = 1; %only set to 1 if running demo.m on image data
+    useImages = 1; % only set to 1 if running demo.m on image data
     %% ******************************************
     
     if strcmp(matlabClusterModule, 'jointstills')
@@ -54,13 +54,13 @@ function [] = QuickRun (L1BagsPlusFile)
     
     gcp();
     
-    %If running Java version, program will fail to add to java classpath on first run. 
-    %Run program again using usedSavedData = 1 [in demo.m] to save time
+    % If running Java version, program will fail to add to java classpath on first run. 
+    % Run program again using usedSavedData = 1 [in demo.m] to save time
     if runJava
         if isunix
-            javaclasspath(strcat(ROOT_DIRECTORY, '/cslForest/csl-java/CSLForest.jar')); %ASSUMES the matlab current folder is "trunk"
+            javaclasspath(strcat(ROOT_DIRECTORY, '/cslForest/csl-java/CSLForest.jar')); % ASSUMES the matlab current folder is "trunk"
         else
-            javaclasspath(strcat(ROOT_DIRECTORY, '\cslForest\csl-java\CSLForest.jar')); %ASSUMES the matlab current folder is "trunk"
+            javaclasspath(strcat(ROOT_DIRECTORY, '\cslForest\csl-java\CSLForest.jar')); % ASSUMES the matlab current folder is "trunk"
         end
         
         try
@@ -72,8 +72,8 @@ function [] = QuickRun (L1BagsPlusFile)
         end
     end
 
-    load(L1BagsPlusFile); %loads L1Bags, Labels, DMap, ReferenceImgs, description, frontend, VOCAB_SIZE, N_VOCAB_PER_CAT, maxFilesPerCat, useSavedData, rstream, windows
-    N_CATS = numel(unique(Labels)); %number of ground truth classes
+    load(L1BagsPlusFile); % loads L1Bags, Labels, DMap, ReferenceImgs, description, frontend, VOCAB_SIZE, N_VOCAB_PER_CAT, maxFilesPerCat, useSavedData, rstream, windows
+    N_CATS = numel(unique(Labels)); % number of ground truth classes
     
     fprintf(strcat('Running CSL with dataset:', description, '\n'));
 
@@ -190,14 +190,14 @@ function [] = QuickRun (L1BagsPlusFile)
                 java_Acc(run,maxk) = 100 * sum(diag(CFMat))/sum(sum(CFMat));
                 fprintf('Java CSL RandomForest: max_k = %d, Accuracy = %f%%.\n', maxk, java_Acc(run,maxk));
                 for i = 1:N_CATS
-                    %format is CFMat(ground truth, predicted)
+                    % format is CFMat(ground truth, predicted)
                     TP(run,maxk,i) = CFMat(i,i);
                     FP(run,maxk,i) = sum(CFMat(:,i))-CFMat(i,i);
                     FN(run,maxk,i) = sum(CFMat(i,:))-CFMat(i,i);
                     TPRate(run,maxk,i) = 100 * TP(run,maxk,i) / (TP(run,maxk,i) + FN(run,maxk,i));
-                    FPRate(run,maxk,i) = 100 * FP(run,maxk,i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); %FP / (FP + TN)
-                    FNRate(run,maxk,i) = 100 * FN(run,maxk,i) / sum(CFMat(i,:)); %FN / (TP + FN)
-                    sensitivity(run,maxk,i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); %TP / (TP + FN)
+                    FPRate(run,maxk,i) = 100 * FP(run,maxk,i) / (sum(sum(CFMat(:,:)))-sum(CFMat(i,:))); % FP / (FP + TN)
+                    FNRate(run,maxk,i) = 100 * FN(run,maxk,i) / sum(CFMat(i,:)); % FN / (TP + FN)
+                    sensitivity(run,maxk,i) = 100 * CFMat(i,i) / sum(CFMat(i,:)); % TP / (TP + FN)
                     fprintf('Class %d:         Sensitivity = %f%%, FP rate = %f%% (%d), FN rate = %f%% (%d)\n', i, sensitivity(run,maxk,i), FPRate(run,maxk,i), FP(run,maxk,i), FNRate(run,maxk,i), FN(run,maxk,i));
                 end
             end
@@ -281,7 +281,7 @@ function [] = QuickRun (L1BagsPlusFile)
                 save(strcat(cslOutputFolder, '/'  , strcat(k_run_unique_str, '_forest.mat')), 'forest');
             end
             
-            clear mex;
+            clear mex
             fprintf('---------------\n');
         end
     end
@@ -327,7 +327,7 @@ function [] = QuickRun (L1BagsPlusFile)
             fprintf('Class %d (stderr):      Sensitivity = %f%%, FP rate = %f%%, FN rate = %f%%\n', i, StdErr(sensitivity(:, maxk, i)), StdErr(FPRate(:, maxk, i)), StdErr(FNRate(:, maxk, i)));
         end
     end
-    clear acc;
+    clear acc
     
     %% plot ROC
     if N_CATS == 2
@@ -342,7 +342,7 @@ function [] = QuickRun (L1BagsPlusFile)
     
     %% save workspace (except bt = cslforest.BatchTrain@3140828f because it's not serializable)
     save(fullfile(cslOutputFolder, 'csl_workspace.mat'), '-v7.3', '-regexp', '^(?!(bt)$).'); %save everything
-    diary off;
+    diary off
 end
 
 function [stdErr] = StdErr (data)

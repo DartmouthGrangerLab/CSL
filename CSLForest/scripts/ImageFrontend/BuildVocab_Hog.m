@@ -6,11 +6,11 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [vocab] = BuildVocab_Hog (VOCAB_SIZE, N_CATS)
-    global ResourcePath;
-    global VocabCatFile;
+function vocab = BuildVocab_Hog(VOCAB_SIZE, N_CATS)
+    global ResourcePath
+    global VocabCatFile
     
-    load('rstream');
+    load(fullfile('CSLForest', 'resources', 'rstream.mat'), 'rstream');
     opts = statset('Display', 'iter', 'Streams', rstream, 'MaxIter', 20);
     fprintf('Starting vocab building with vocab size:%d, number of categories:%d\n', VOCAB_SIZE, N_CATS);
     Feats = GatherFeatures(ResourcePath, VocabCatFile, VOCAB_SIZE, N_CATS);    
@@ -25,10 +25,10 @@ function [vocab] = BuildVocab_Hog (VOCAB_SIZE, N_CATS)
 end
 
 
-function [FeaturesForLevel] = GatherFeatures (ResourcePath, CatFile, VOCAB_SIZE, N_CATS)
-    global N_VOCAB_PER_CAT;
-    global ImgPath;
-    load('rstream');
+function FeaturesForLevel = GatherFeatures(ResourcePath, CatFile, VOCAB_SIZE, N_CATS)
+    global N_VOCAB_PER_CAT
+    global ImgPath
+    load(fullfile('CSLForest', 'resources', 'rstream.mat'), 'rstream');
     
     VocabFileList = importdata(strcat(ResourcePath, '/', 'VocabFileList'));
     opts = statset('Display', 'iter', 'Streams', rstream, 'MaxIter', 20);
@@ -52,5 +52,3 @@ function [FeaturesForLevel] = GatherFeatures (ResourcePath, CatFile, VOCAB_SIZE,
     end
     
 end
-    
-    

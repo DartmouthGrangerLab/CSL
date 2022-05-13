@@ -7,7 +7,7 @@
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
 % DESCRIPTION: Gives the label for the test data 
-function [predict_node,tree] = ClassifyData (tree, test_data, test_point)
+function [predict_node,tree] = ClassifyData(tree, test_data, test_point)
     idx = 1;
     tree.Node{idx,4}(end + 1,1) = test_point; %root
     while ~determine_leaf(tree, idx)
@@ -27,4 +27,3 @@ function [predict_node,tree] = ClassifyData (tree, test_data, test_point)
         tree.Node{idx,4}(end + 1,1) = test_point;
     end
 end
-

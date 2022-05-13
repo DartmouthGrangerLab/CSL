@@ -6,7 +6,7 @@
 %        available from: http://www.frontiersin.org/computational_neuroscience/10.3389/fncom.2011.00050/abstract
 % 3)  Bowen, E. F. W., Tofel, B. B., Parcak, S., & Granger, R. (2017). Algorithmic Identification of Looted Archaeological Sites from Space. Frontiers in ICT, 4, 4.
 %        available from: http://journal.frontiersin.org/article/10.3389/fict.2017.00004/abstract
-function [predict_label,forest] = label_posterior (forest, test_data, DMapEntry, labels, ntrees, test_point, JSSettings, clusterModule)
+function [predict_label,forest] = label_posterior(forest, test_data, DMapEntry, labels, ntrees, test_point, JSSettings, clusterModule)
     predict_node = zeros(1,ntrees);
     content{ntrees} = {};
     memcnt{ntrees} = {};
@@ -46,4 +46,3 @@ function [predict_label,forest] = label_posterior (forest, test_data, DMapEntry,
     predict_labels = find(forest_count == max(forest_count));
     predict_label = predict_labels(1,1);
 end
-
